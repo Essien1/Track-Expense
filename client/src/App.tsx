@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { BrowserRouter as Router, Route, Routes, useLocation, Link } from "react-router-dom";
+import  { useState, useEffect, useRef } from "react";
+import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Report from "./pages/Report";
 import AddExpenseForm from "./components/AddExpenseForm";
