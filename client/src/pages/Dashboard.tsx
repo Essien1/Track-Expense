@@ -38,25 +38,31 @@ const Dashboard: React.FC<{ activeTab: string }> = ({ activeTab }) => {
         axios.get("https://track-expense.onrender.com/api/expenses"),
         axios.get("https://track-expense.onrender.com/api/budget"),
       ]);
-
-      console.log('budget response',budgetResponse.data);
-
-      const expenses = expensesResponse.data;
+  
+      console.log('budget response', budgetResponse);
+  
+      // Normalize budget data
+      const budgetData = Array.isArray(budgetResponse.data) 
+        ? budgetResponse.data[0] 
+        : budgetResponse.data;
+  
+      const expenses = expensesResponse?.data || [];
       const totalExpense = expenses.reduce((sum: number, exp: Expense) => sum + exp.amount, 0);
+      
       const mostSpending = expenses.length
         ? expenses.reduce((max: Expense, exp: Expense) => (exp.amount > max.amount ? exp : max), expenses[0])
         : { category: "N/A", amount: 0, description: "", person: "", date: "" };
-
+  
       const newData = {
-        income: budgetResponse.data[0].monthlyBudget,
-        expense: totalExpense,
-        savings: (budgetResponse.data[0].monthlyBudget || 0) - totalExpense,
-        mostSpending,
-        expenses,
-        annualBudget: budgetResponse.data.annualBudget || 0,
-        monthlyBudget: budgetResponse.data.monthlyBudget || 0,
+        income: budgetData?.monthlyBudget || 0,
+        expense: totalExpense || 0,
+        savings: (budgetData?.monthlyBudget - totalExpense) || 0,
+        mostSpending: mostSpending,
+        expenses: expenses,
+        annualBudget: budgetData?.annualBudget || 0,
+        monthlyBudget: budgetData?.monthlyBudget || 0,
       };
-
+  
       setData(newData);
       console.log("Updated Data State:", newData);
     } catch (err: unknown) {

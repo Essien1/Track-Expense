@@ -13,7 +13,7 @@ const BudgetPlanner = ({
   const [savedMonthlyBudget, setSavedMonthlyBudget] = useState<number>(0);
 
   // API Base URL
-  const API_URL = "http://localhost:5000/api";
+  const API_URL = "https://track-expense.onrender.com/api";
 
   // Fetch budget & expenses from backend when component mounts
   useEffect(() => {
