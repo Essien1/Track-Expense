@@ -1,27 +1,41 @@
 const express = require("express");
 const router = express.Router();
-const Budget = require("../models/Budget"); // Ensure correct path
+const Budget = require("../models/Budget");
 
-// Get all budgets
+// Get current budget
 router.get("/", async (req, res) => {
   try {
-    const budgets = await Budget.find();
-    res.json(budgets);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const budget = await Budget.findOne(); // Assuming one budget document
+    res.json(budget);
+  } catch (error) {
+    res.status(500).json({ message: "Server error retrieving budget" });
   }
 });
 
-// Create a budget
+// Set budget
 router.post("/", async (req, res) => {
   try {
-    const { amount, description, person, category } = req.body;
-    const newBudget = new Budget({ amount, description, person, category });
-    const savedBudget = await newBudget.save();
-    res.status(201).json(savedBudget);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const { annualBudget, monthlyBudget } = req.body;
+
+    // Validate input
+    if (annualBudget === undefined || monthlyBudget === undefined) {
+      return res.status(400).json({ message: "Annual and monthly budget are required" });
+    }
+
+    // Find or create a single budget document
+    let budget = await Budget.findOneAndUpdate(
+      {}, // Empty filter to match any document
+      { annualBudget, monthlyBudget }, 
+      { 
+        upsert: true, // Create if not exists
+        new: true // Return the updated/created document
+      }
+    );
+
+    res.json(budget);
+  } catch (error) {
+    console.error("Error saving budget:", error);
+    res.status(500).json({ message: "Error saving budget", error: error.message });
   }
 });
-
 module.exports = router;

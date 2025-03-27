@@ -8,6 +8,7 @@ import Sidebar from "./components/layout/Sidebar";
 import { Expense } from "./types";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import Settings from "./components/Settings";
+import axios from "axios";
 // import { DarkModeProvider } from "./components/DarkModeContext";
 
 function App() {
@@ -19,8 +20,21 @@ function App() {
   // const location = useLocation();
 
   // Function to add expense
-  const handleAddExpense = (newExpense: Expense) => {
-    setExpenses((prev) => [...prev, newExpense]);
+  // const handleAddExpense = (newExpense: Expense) => {
+  //   setExpenses((prev) => [...prev, newExpense]);
+  // };
+
+  const handleAddExpense = async (expense: Expense) => {
+    try {
+      console.log('Expense', expense);
+      const response = await axios.post("https://track-expense.onrender.com/api/expenses", expense);
+      console.log(response);
+
+      // fetchFinanceData();
+    } catch (err: unknown) {
+      console.log('Error', err);
+      // setError("Failed to add expense");
+    }
   };
 
   // Function to update budget
@@ -85,7 +99,7 @@ function App() {
           {/* Main Content */}
           <div className="flex-1 p-6 overflow-y-auto bg-gray-100 mt-14 md:mt-0">
             <Routes>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<Dashboard activeTab="dashboard" />} />
               <Route path="/add-expenses" element={<AddExpenseForm onAddExpense={handleAddExpense} />} />
               <Route path="/budget-planner" element={<BudgetPlanner onUpdateBudget={handleUpdateBudget} />} />
               <Route path="/report" element={<Report />} />

@@ -13,22 +13,21 @@ interface Expense {
 // Define props type
 interface PieChartProps {
   expenses: Expense[];
+  income: number;
 }
 
-const PieChartComponent: React.FC<PieChartProps> = ({ expenses }) => {
+const PieChartComponent: React.FC<PieChartProps> = ({ expenses, income }) => {
   // Calculate total expenses
   const totalExpense = expenses.reduce((sum, exp) => sum + exp.amount, 0);
 
-  // Get stored income from localStorage safely
-  const storedData = JSON.parse(localStorage.getItem("financeData") ?? "{}");
-  const totalIncome = storedData.income ?? 45000;
 
   // Calculate savings
-  const savings = totalIncome - totalExpense;
+  const savings = income - totalExpense;
+
 
   // Dynamic pie chart data
   const data = [
-    { name: "Income", value: totalIncome, color: "#16a34a" }, // Green
+    { name: "Income", value: income, color: "#16a34a" }, // Green
     { name: "Expense", value: totalExpense, color: "#dc2626" }, // Red
     { name: "Savings", value: savings, color: "#0f172a" }, // Dark Blue
   ];
@@ -73,7 +72,7 @@ const PieChartComponent: React.FC<PieChartProps> = ({ expenses }) => {
                 <span className="text-gray-600">{item.name}</span>
               </div>
               <div className="flex items-center space-x-1 text-gray-800 font-semibold">
-                <span>${item.value.toLocaleString()}</span>
+                <span>₦{item.value.toLocaleString()}</span>
                 {item.name === "Income" ? (
                   <ArrowUpRight className="w-4 h-4 text-green-500" />
                 ) : (

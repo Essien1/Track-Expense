@@ -5,7 +5,7 @@ import PieChartComponent from "../components/charts/PieChart";
 import LineChartComponent from "../components/charts/LineChart";
 import RecentExpenses from "../components/RecentExpenses";
 import AddExpenseForm from "../components/AddExpenseForm";
-import BudgetPlanner from "../components/BudgetPlanner"; 
+import BudgetPlanner from "../components/BudgetPlanner";
 import { Expense } from "../types";
 import axios from "axios";
 
@@ -15,13 +15,11 @@ interface FinanceData {
   savings: number;
   mostSpending: Expense;
   expenses: Expense[];
-  annualBudget: number;
-  monthlyBudget: number;
+  // annualBudget: number;
+  // monthlyBudget: number;
 }
 
-const Dashboard: React.FC = () => {
-  const [showExpenseForm, _setShowExpenseForm] = useState(false);
-  const [showBudgetPlanner, _setShowBudgetPlanner] = useState(false);
+const Dashboard: React.FC<{ activeTab: string }> = ({ activeTab }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [data, setData] = useState<FinanceData>({
@@ -30,104 +28,101 @@ const Dashboard: React.FC = () => {
     savings: 0,
     mostSpending: { category: "N/A", amount: 0, description: "", person: "", date: "" },
     expenses: [],
-    annualBudget: 0,
-    monthlyBudget: 0,
+    // annualBudget: 0,
+    // monthlyBudget: 0,
   });
 
-  useEffect(() => {
-    const fetchFinanceData = async () => {
-      try {
-        const expensesResponse = await axios.get("https://track-expense.onrender.com/api/expenses");
-        const budgetResponse = await axios.get("https://track-expense.onrender.com/api/budget");
-
-        const expenses = expensesResponse.data;
-        const totalExpense = expenses.reduce((sum: number, exp: Expense) => sum + exp.amount, 0);
-        const mostSpending = expenses.length
-          ? expenses.reduce((max: Expense, exp: Expense) => (exp.amount > max.amount ? exp : max), expenses[0])
-          : { category: "N/A", amount: 0, description: "", person: "", date: "" };
-
-        setData({
-          income: budgetResponse.data.monthlyBudget || 0,
-          expense: totalExpense,
-          savings: (budgetResponse.data.monthlyBudget || 0) - totalExpense,
-          mostSpending,
-          expenses,
-          annualBudget: budgetResponse.data.annualBudget || 0,
-          monthlyBudget: budgetResponse.data.monthlyBudget || 0,
-        });
-      } catch (err: unknown) {
-        if (axios.isAxiosError(err)) {
-          setError(err.response?.data?.message || "Failed to fetch data");
-        } else if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("An unknown error occurred");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFinanceData();
-  }, []);
-
-  const handleAddExpense = async (expense: Expense) => {
+  const fetchFinanceData = async () => {
     try {
-      const response = await axios.post("https://track-expense.onrender.com/api/expenses", expense);
-      const newExpense = response.data;
+      const [expensesResponse, budgetResponse] = await Promise.all([
+        axios.get("https://track-expense.onrender.com/api/expenses"),
+        axios.get("https://track-expense.onrender.com/api/budget"),
+      ]);
 
-      setData((prev) => {
-        const updatedExpenses = [newExpense, ...prev.expenses];
-        return {
-          ...prev,
-          expenses: updatedExpenses,
-          expense: prev.expense + newExpense.amount,
-          savings: prev.income - (prev.expense + newExpense.amount),
-          mostSpending: updatedExpenses.length
-            ? updatedExpenses.reduce((max, exp) => (exp.amount > max.amount ? exp : max), newExpense)
-            : newExpense,
-        };
-      });
+      console.log('budget response',budgetResponse.data);
+
+      const expenses = expensesResponse.data;
+      const totalExpense = expenses.reduce((sum: number, exp: Expense) => sum + exp.amount, 0);
+      const mostSpending = expenses.length
+        ? expenses.reduce((max: Expense, exp: Expense) => (exp.amount > max.amount ? exp : max), expenses[0])
+        : { category: "N/A", amount: 0, description: "", person: "", date: "" };
+
+      const newData = {
+        income: budgetResponse.data[0].monthlyBudget,
+        expense: totalExpense,
+        savings: (budgetResponse.data[0].monthlyBudget || 0) - totalExpense,
+        mostSpending,
+        expenses,
+        annualBudget: budgetResponse.data.annualBudget || 0,
+        monthlyBudget: budgetResponse.data.monthlyBudget || 0,
+      };
+
+      setData(newData);
+      console.log("Updated Data State:", newData);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || "Failed to add expense");
+        setError(err.response?.data?.message || "Failed to fetch data");
       } else if (err instanceof Error) {
         setError(err.message);
       } else {
         setError("An unknown error occurred");
       }
+    } finally {
+      setLoading(false);
     }
   };
+
+  // useEffect(() => {
+  //   fetchFinanceData();
+  // }, []);
+
+  useEffect(() => {
+    fetchFinanceData();
+    console.log("Fetching data...");
+  }, []);
+  
+  // Debugging: Log updated finance data when it changes
+  useEffect(() => {
+    console.log("Received Props:", data.income, data.expense, data.savings, data.mostSpending, data.expenses);
+  }, [data.income, data.expense, data.savings, data.mostSpending, data.expenses]);
+  
+  useEffect(() => {
+    console.log("Data updated:", data);
+  }, [data]);
+
+    const handleAddExpense = async (expense: Expense) => {
+      try {
+        console.log('Expense', expense);
+        const response = await axios.post("https://track-expense.onrender.com/api/expenses", expense);
+        console.log(response);
+
+        fetchFinanceData();
+      } catch (err: unknown) {
+        console.log('Error', err);
+        setError("Failed to add expense");
+      }
+    };
 
   const handleUpdateBudget = async (annualBudget: number, monthlyBudget: number) => {
     try {
       await axios.post("https://track-expense.onrender.com/api/budget", { annualBudget, monthlyBudget });
-      setData((prev) => ({
-        ...prev,
-        income: monthlyBudget,
-        annualBudget,
-        monthlyBudget,
-        savings: monthlyBudget - prev.expense,
-      }));
+      fetchFinanceData();
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || "Failed to update budget");
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred");
-      }
+      setError("Failed to update budget");
     }
   };
+
+  console.log("Active Tab:", activeTab);
+
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
     <div className="flex flex-col p-4 md:p-6 bg-gray-50 min-h-screen">
-      {showExpenseForm ? (
+      {activeTab === "add-expense" ? (
         <AddExpenseForm onAddExpense={handleAddExpense} />
-      ) : showBudgetPlanner ? (
+      ) : activeTab === "budget-planner" ? (
         <BudgetPlanner onUpdateBudget={handleUpdateBudget} />
       ) : (
         <>
@@ -144,8 +139,8 @@ const Dashboard: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-            <PieChartComponent expenses={data.expenses} />
-            <LineChartComponent expenses={data.expenses} />
+            <PieChartComponent expenses={data.expenses} income={data.income} />
+            <LineChartComponent expenses={data.expenses}  />
           </div>
         </>
       )}

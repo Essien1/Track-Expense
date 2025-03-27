@@ -1,10 +1,9 @@
 const mongoose = require("mongoose");
 
 const BudgetSchema = new mongoose.Schema({
-  amount: Number,
-  description: String,
-  person: String,
-  category: String
+  annualBudget: { type: Number, required: true },
+  monthlyBudget: { type: Number, required: true },
 });
 
-module.exports = mongoose.model("Budget", BudgetSchema);
+const Budget = mongoose.model("Budget", BudgetSchema);
+module.exports = Budget;

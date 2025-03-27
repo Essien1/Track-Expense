@@ -1,4 +1,5 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const BudgetPlanner = ({
   onUpdateBudget,
@@ -11,39 +12,55 @@ const BudgetPlanner = ({
   const [savedAnnualBudget, setSavedAnnualBudget] = useState<number>(0);
   const [savedMonthlyBudget, setSavedMonthlyBudget] = useState<number>(0);
 
-  // Load budget & expenses from localStorage when component mounts
+  // API Base URL
+  const API_URL = "http://localhost:5000/api";
+
+  // Fetch budget & expenses from backend when component mounts
   useEffect(() => {
-    const savedBudget = JSON.parse(localStorage.getItem("budgetData") || "{}");
-    const savedExpenses = JSON.parse(
-      localStorage.getItem("financeData") || "{}"
-    );
+    const fetchBudgetAndExpenses = async () => {
+      try {
+        // Fetch budget from backend
+        const budgetRes = await axios.get(`${API_URL}/budget`);
+        if (budgetRes.data) {
+          setSavedAnnualBudget(budgetRes.data.annualBudget);
+          setSavedMonthlyBudget(budgetRes.data.monthlyBudget);
+        }
 
-    if (savedBudget) {
-      setSavedAnnualBudget(savedBudget.annualBudget || 0);
-      setSavedMonthlyBudget(savedBudget.monthlyBudget || 0);
-    }
+        // Fetch total expenses from backend
+        const expensesRes = await axios.get(`${API_URL}/expenses`);
+        const totalSpent = expensesRes.data.reduce(
+          (sum: number, expense: any) => sum + expense.amount,
+          0
+        );
+        setTotalExpenses(totalSpent);
+      } catch (error) {
+        console.error("Error fetching budget/expenses:", error);
+      }
+    };
 
-    if (savedExpenses.expenses) {
-      const totalSpent = savedExpenses.expenses.reduce(
-        (sum: number, expense: any) => sum + expense.amount,
-        0
-      );
-      setTotalExpenses(totalSpent);
-    }
+    fetchBudgetAndExpenses();
   }, []);
 
-  // Save budget to localStorage and update parent state
-  const saveBudget = () => {
-    localStorage.setItem(
-      "budgetData",
-      JSON.stringify({ annualBudget, monthlyBudget })
-    );
-    setSavedAnnualBudget(annualBudget);
-    setSavedMonthlyBudget(monthlyBudget);
-    onUpdateBudget(annualBudget, monthlyBudget);
-    alert("Budget saved successfully!");
-    setAnnualBudget(0); // Clear input field only
-    setMonthlyBudget(0); // Clear input field only
+  // Save budget to backend
+  const saveBudget = async () => {
+    try {
+    console.log('annualBudget', annualBudget);
+    console.log('monthlyBudget', monthlyBudget);
+      await axios.post(`${API_URL}/budget`, {
+        annualBudget,
+        monthlyBudget,
+      });
+
+      // Update UI
+      setSavedAnnualBudget(annualBudget);
+      setSavedMonthlyBudget(monthlyBudget);
+      onUpdateBudget(annualBudget, monthlyBudget);
+      alert("Budget saved successfully!");
+      setAnnualBudget(0);
+      setMonthlyBudget(0);
+    } catch (error) {
+      console.error("Error saving budget:", error);
+    }
   };
 
   // Calculate spending status
@@ -59,13 +76,14 @@ const BudgetPlanner = ({
       <div className="bg-gray-100 p-4 rounded-lg mb-6">
         <h3 className="text-lg font-medium mb-2">Current Budget</h3>
         <p className="text-gray-700">
-          <span className="font-semibold">Monthly Budget:</span> $
-          {savedMonthlyBudget.toLocaleString()}
-        </p>
-        <p className="text-gray-700">
-          <span className="font-semibold">Annual Budget:</span> $
-          {savedAnnualBudget.toLocaleString()}
-        </p>
+  <span className="font-semibold">Monthly Budget:</span> ₦
+  {(savedMonthlyBudget || 0).toLocaleString()}
+</p>
+<p className="text-gray-700">
+  <span className="font-semibold">Annual Budget:</span> ₦
+  {(savedAnnualBudget || 0).toLocaleString()}
+</p>
+
       </div>
 
       {/* Input Fields */}
@@ -97,7 +115,7 @@ const BudgetPlanner = ({
 
       <button
         onClick={saveBudget}
-        className="bg-green-600  text-white px-4 py-2 rounded-md mt-2 hover:bg-green-700 w-64"
+        className="bg-green-600 text-white px-4 py-2 rounded-md mt-2 hover:bg-green-700 w-64"
       >
         Save Budget
       </button>
@@ -106,7 +124,7 @@ const BudgetPlanner = ({
       <div className="mt-6 p-4 bg-gray-100 rounded-lg">
         <h3 className="font-medium">Current Spending Status</h3>
         <p className="text-gray-700">
-          <span className="font-semibold">Total Expenses:</span> $
+          <span className="font-semibold">Total Expenses:</span> ₦
           {totalExpenses.toLocaleString()}
         </p>
         <p className={`text-lg font-semibold ${spendingColor}`}>
