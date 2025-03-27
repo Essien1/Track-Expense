@@ -13,7 +13,7 @@ import axios from "axios";
 
 function App() {
   // State for finance data
-  const [_expenses, setExpenses] = useState<Expense[]>([]);
+  const [_expenses, _setExpenses] = useState<Expense[]>([]);
   const [_budget, setBudget] = useState({ annualBudget: 0, monthlyBudget: 0 });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement | null>(null);
